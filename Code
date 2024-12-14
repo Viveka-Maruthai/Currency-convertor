@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Currency Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f7f9fc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    button {
+      background: #4CAF50;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Currency Converter</h1>
+    <form id="currencyForm">
+      <div class="form-group">
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" placeholder="Enter amount" required>
+      </div>
+
+      <div class="form-group">
+        <label for="fromCurrency">From:</label>
+        <select id="fromCurrency"></select>
+      </div>
+
+      <div class="form-group">
+        <label for="toCurrency">To:</label>
+        <select id="toCurrency"></select>
+      </div>
+
+      <button type="submit">Convert</button>
+    </form>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const API_URL = "https://api.exchangerate-api.com/v4/latest/USD"; // Free API for exchange rates
+      const fromCurrency = document.getElementById("fromCurrency");
+      const toCurrency = document.getElementById("toCurrency");
+      const amount = document.getElementById("amount");
+      const resultDiv = document.getElementById("result");
+
+      let exchangeRates = {};
+      let currencies = {
+        "USD": "United States Dollar - United States",
+        "EUR": "Euro - Eurozone (Countries in the European Union)",
+        "GBP": "British Pound Sterling - United Kingdom",
+        "AUD": "Australian Dollar - Australia",
+        "CAD": "Canadian Dollar - Canada",
+        "JPY": "Japanese Yen - Japan",
+        "INR": "Indian Rupee - India",
+        "CNY": "Chinese Yuan - China",
+        "MXN": "Mexican Peso - Mexico",
+        "BRL": "Brazilian Real - Brazil",
+        "RUB": "Russian Ruble - Russia",
+        "CHF": "Swiss Franc - Switzerland",
+        "SEK": "Swedish Krona - Sweden",
+        "NZD": "New Zealand Dollar - New Zealand",
+        "ZAR": "South African Rand - South Africa",
+        "HKD": "Hong Kong Dollar - Hong Kong",
+        "SGD": "Singapore Dollar - Singapore",
+        "KRW": "South Korean Won - South Korea",
+        "MYR": "Malaysian Ringgit - Malaysia",
+        "TRY": "Turkish Lira - Turkey",
+        "SAR": "Saudi Riyal - Saudi Arabia",
+        "NOK": "Norwegian Krone - Norway",
+        "DKK": "Danish Krone - Denmark",
+        "PLN": "Polish Zloty - Poland",
+        "CZK": "Czech Koruna - Czech Republic",
+        "HUF": "Hungarian Forint - Hungary",
+        "THB": "Thai Baht - Thailand",
+        "IDR": "Indonesian Rupiah - Indonesia",
+        "PHP": "Philippine Peso - Philippines",
+        "EGP": "Egyptian Pound - Egypt",
+        "IQD": "Iraqi Dinar - Iraq",
+        "COP": "Colombian Peso - Colombia",
+        "ARS": "Argentine Peso - Argentina",
+        "KWD": "Kuwaiti Dinar - Kuwait",
+        "BHD": "Bahraini Dinar - Bahrain",
+        "OMR": "Omani Rial - Oman",
+        "JOD": "Jordanian Dinar - Jordan",
+        "MAD": "Moroccan Dirham - Morocco",
+        "AED": "United Arab Emirates Dirham - UAE",
+        "QAR": "Qatari Rial - Qatar",
+        "LKR": "Sri Lankan Rupee - Sri Lanka",
+        "KES": "Kenyan Shilling - Kenya",
+        "UGX": "Ugandan Shilling - Uganda",
+        "TWD": "New Taiwan Dollar - Taiwan",
+        "VND": "Vietnamese Dong - Vietnam",
+        "RSD": "Serbian Dinar - Serbia",
+        "MKD": "Macedonian Denar - North Macedonia",
+        "BWP": "Botswana Pula - Botswana",
+        "KZT": "Kazakhstani Tenge - Kazakhstan",
+        "PEN": "Peruvian Nuevo Sol - Peru",
+        "LTL": "Lithuanian Litas - Lithuania",
+        "LVL": "Latvian Lats - Latvia",
+        "HRK": "Croatian Kuna - Croatia",
+        "ISK": "Icelandic Krona - Iceland",
+        "BYN": "Belarusian Ruble - Belarus",
+        "MDL": "Moldovan Leu - Moldova",
+        "TJS": "Tajikistani Somoni - Tajikistan",
+        "UZS": "Uzbekistani Som - Uzbekistan",
+        "AFN": "Afghan Afghani - Afghanistan",
+        "GEL": "Georgian Lari - Georgia",
+        "ETB": "Ethiopian Birr - Ethiopia",
+        "DZD": "Algerian Dinar - Algeria",
+        "FJD": "Fijian Dollar - Fiji",
+        "KGS": "Kyrgyzstani Som - Kyrgyzstan",
+        "TMT": "Turkmenistan Manat - Turkmenistan",
+        "LKR": "Sri Lankan Rupee - Sri Lanka"
+      };
+
+      // Fetch exchange rates and populate dropdowns
+      fetch(API_URL)
+        .then((response) => response.json())
+        .then((data) => {
+          exchangeRates = data.rates;
+
+          // Populate currency dropdowns with country names
+          for (let currency in exchangeRates) {
+            const optionFrom = document.createElement("option");
+            const optionTo = document.createElement("option");
+
+            const currencyName = currencies[currency] || currency;  // Fallback to currency code if no name available
+            optionFrom.value = optionTo.value = currency;
+            optionFrom.textContent = `${currency} - ${currencyName}`;
+            optionTo.textContent = `${currency} - ${currencyName}`;
+
+            fromCurrency.appendChild(optionFrom);
+            toCurrency.appendChild(optionTo);
+          }
+
+          // Set default selections
+          fromCurrency.value = "USD";
+          toCurrency.value = "EUR";
+        })
+        .catch((error) => {
+          console.error("Error fetching exchange rates:", error);
+          resultDiv.textContent = "Failed to load currency data.";
+        });
+
+      // Handle form submission
+      document.getElementById("currencyForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const fromValue = fromCurrency.value;
+        const toValue = toCurrency.value;
+        const amountValue = parseFloat(amount.value);
+
+        if (isNaN(amountValue) || amountValue <= 0) {
+          resultDiv.textContent = "Please enter a valid amount.";
+          return;
+        }
+
+        const conversionRate = exchangeRates[toValue] / exchangeRates[fromValue];
+        const convertedAmount = (amountValue * conversionRate).toFixed(2);
+
+        resultDiv.textContent = `${amountValue} ${fromValue} = ${convertedAmount} ${toValue}`;
+      });
+    });
+  </script>
+</body>
+</html>
